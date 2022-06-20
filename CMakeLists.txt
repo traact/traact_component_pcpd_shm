@@ -19,3 +19,5 @@ set(COMPONENT_SRC src/ShmSource.cpp )
 add_library(${CONAN_PACKAGE_NAME} SHARED ${COMPONENT_SRC})
 
 conan_target_link_libraries(${CONAN_PACKAGE_NAME})
+
+include(traact_default_library_final)
