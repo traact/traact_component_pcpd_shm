@@ -12,12 +12,22 @@ project(${CONAN_PACKAGE_NAME}_PROJECT VERSION ${CONAN_PACKAGE_VERSION})
 
 include(traact_default_library_setup)
 
-# add your source files here
-set(COMPONENT_SRC src/ShmSource.cpp )
+find_package(CapnProto CONFIG REQUIRED)
 
+# add your source files here
+set(COMPONENT_SRC src/ShmCompositeBufferSource.cpp src/SynchronizedBufferReader.cpp src/SynchronizedBufferReader.h src/utils.h src/ShmSensorCalibrationSource.cpp)
 
 add_library(${CONAN_PACKAGE_NAME} SHARED ${COMPONENT_SRC})
 
-conan_target_link_libraries(${CONAN_PACKAGE_NAME})
+#conan_target_link_libraries(${CONAN_PACKAGE_NAME})
+target_link_libraries(${CONAN_PACKAGE_NAME} PRIVATE
+        CONAN_PKG::opencv
+        CONAN_PKG::pcpd_shm_client
+        CONAN_PKG::traact_core
+        CONAN_PKG::traact_spatial
+        CONAN_PKG::traact_vision
+        CapnProto::capnp-rpc
+
+        )
 
 include(traact_default_library_final)
