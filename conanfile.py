@@ -7,7 +7,7 @@ class TraactPackage(ConanFile):
     python_requires = "traact_run_env/1.0.0@traact/latest"
     python_requires_extend = "traact_run_env.TraactPackageCmake"
 
-    name = "PCPD SHM client for traact"
+    name = "traact_component_shm"
     description = "Source and Sink components using pcpd shared memory"
     url = "https://github.com/traact/traact_component_pcpd_shm.git"
     license = "MIT"
