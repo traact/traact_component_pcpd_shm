@@ -82,8 +82,8 @@ class ShmCompositeBufferSource : public Component {
             handle_raw_frame(timestamp, reader);
         };
         SPDLOG_DEBUG("ShmCompositeBufferSource init shm runtime");
-        const iox::RuntimeName_t APP_NAME(iox::cxx::TruncateToCapacity, shm_app_name_);
-        iox::runtime::PoshRuntime::initRuntime(APP_NAME);
+        iox_app_name_ = iox::RuntimeName_t(iox::cxx::TruncateToCapacity, shm_app_name_);
+        iox::runtime::PoshRuntime::initRuntime(iox_app_name_);
         reader_ = std::make_unique<SynchronizedBufferReader>(should_stop_, "traact_shm", stream_name_,configure, handle);
 
         thread_ = std::make_unique<std::thread>([this](){
@@ -138,6 +138,7 @@ class ShmCompositeBufferSource : public Component {
     std::future<void> stopped_future_;
 
     std::string shm_app_name_;
+    iox::RuntimeName_t iox_app_name_;
     std::string stream_name_;
     std::unique_ptr<SynchronizedBufferReader> reader_;
 
@@ -256,7 +257,7 @@ class ShmCompositeBufferSource : public Component {
         }
 
         auto is_ir = ir_channel_names.find(port_name);
-        if(is_ir != color_channel_names.end()){
+        if(is_ir != ir_channel_names.end()){
             auto& output_image = source_buffer->getOutput<OutPortImage>(ir_image_group_.port_group_index, is_ir->second);
             image.copyTo(output_image.getImage());
             auto& output_header = source_buffer->getOutputHeader<OutPortImage>(ir_image_group_.port_group_index, is_ir->second);
