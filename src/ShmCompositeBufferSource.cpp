@@ -71,6 +71,7 @@ class ShmCompositeBufferSource : public Component {
         return true;
     }
     bool start() override {
+        SPDLOG_INFO("ShmCompositeBufferSource start");
         running_.store(true, std::memory_order_release);
         stopped_future_ = stopped_promise_.get_future();
 
@@ -80,7 +81,7 @@ class ShmCompositeBufferSource : public Component {
         auto handle = [this](auto timestamp, auto reader){
             handle_raw_frame(timestamp, reader);
         };
-
+        SPDLOG_DEBUG("ShmCompositeBufferSource init shm runtime");
         const iox::RuntimeName_t APP_NAME(iox::cxx::TruncateToCapacity, shm_app_name_);
         iox::runtime::PoshRuntime::initRuntime(APP_NAME);
         reader_ = std::make_unique<SynchronizedBufferReader>(should_stop_, "traact_shm", stream_name_,configure, handle);
@@ -105,6 +106,7 @@ class ShmCompositeBufferSource : public Component {
             stopped_promise_.set_value();
         });
 
+        SPDLOG_DEBUG("ShmCompositeBufferSource done");
         return true;
     }
     bool stop() override {
@@ -145,7 +147,7 @@ class ShmCompositeBufferSource : public Component {
     std::map<std::string, size_t> ir_channel_names;
 
     bool configure_stream_receiver(const std::map<std::string, pcpd::shm::StreamMetaData> &md){
-
+        SPDLOG_DEBUG("ShmCompositeBufferSource config start");
         for (const auto& name_index : color_channel_names) {
             auto is_present = md.find(name_index.first);
             if(is_present == md.end()){
@@ -160,7 +162,7 @@ class ShmCompositeBufferSource : public Component {
                 return false;
             }
         }
-        SPDLOG_INFO("in config");
+        SPDLOG_DEBUG("ShmCompositeBufferSource config done");
         return true;
     };
 
