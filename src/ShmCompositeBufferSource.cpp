@@ -16,13 +16,7 @@ class ShmCompositeBufferSource : public Component {
     using OutPortImage = buffer::PortConfig<traact::vision::ImageHeader, 0>;
 
     ~ShmCompositeBufferSource() {
-        try {
-            if (thread_->joinable()) {
-                thread_->join();
-            }
-        } catch (std::exception &e) {
-            SPDLOG_ERROR(e.what());
-        }
+
 
     }
 
@@ -118,6 +112,14 @@ class ShmCompositeBufferSource : public Component {
         running_.store(false, std::memory_order_release);
         while(stopped_future_.wait_for(kDataflowStopTimeout) == std::future_status::timeout){
             SPDLOG_WARN("timeout waiting for shm source to stop");
+        }
+        try {
+            if (thread_->joinable()) {
+                thread_->join();
+            }
+            reader_.reset();
+        } catch (std::exception &e) {
+            SPDLOG_ERROR(e.what());
         }
         return true;
     }

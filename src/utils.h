@@ -44,8 +44,8 @@ static vision::CameraCalibration Artekmed2Traact(const pcpd::datatypes::Intrinsi
     for (int i = 0; i < intrinsic.radial_distortion.rows(); ++i) {
         result.radial_distortion[i] = intrinsic.radial_distortion[i];
     }
-    result.tangential_distortion.resize(2);
-    for (int i = 0; i < intrinsic.radial_distortion.rows(); ++i) {
+    result.tangential_distortion.resize(intrinsic.tangential_distortion.rows());
+    for (int i = 0; i < intrinsic.tangential_distortion.rows(); ++i) {
         result.tangential_distortion[i] = intrinsic.tangential_distortion[i];
     }
 

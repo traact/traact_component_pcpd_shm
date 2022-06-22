@@ -14,6 +14,7 @@ class SynchronizedBufferReader : public pcpd::shm::BaseSynchronizedBufferReader 
                                               const artekmed::network::ShmBufferDescriptor::Reader)>;
     SynchronizedBufferReader(bool &should_stop, const std::string &node_name, const std::string &service_name, ConfigureCallback configure_callback,
                              HandleCallback handle_callback);
+    virtual ~SynchronizedBufferReader() = default;
  protected:
     bool configure_stream_receiver(const std::map<std::string, pcpd::shm::StreamMetaData> &md) override;
     void handle_raw_frame(const uint64_t timestamp,
