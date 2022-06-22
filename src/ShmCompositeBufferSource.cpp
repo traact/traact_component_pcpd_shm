@@ -174,29 +174,38 @@ class ShmCompositeBufferSource : public Component {
         auto global_timestamp = reader.getTimestamp();
         auto traact_timestamp = AsTimestamp(global_timestamp);
         auto buffer_future = request_callback_(traact_timestamp);
-
         buffer_future.wait();
         auto buffer = buffer_future.get();
-        if (!buffer) {
-            SPDLOG_WARN("Could not get source buffer for ts {0}", global_timestamp);
-            return;
-        }
+        try{
 
-        for (int i = 0; i < numports; ++i) {
-            auto port = ports[i];
-            std::string port_name = port.getName().cStr();
-            auto port_data = port.getData();
-            auto meta_data = port_data.getMetadata();
-            auto hdr = meta_data.getHeader();
-            auto data = static_cast<const void *>(port_data.getData().begin());
-
-            if (hdr.isImage()) {
-                // call handler
-                handle_image(port_name, AsTimestamp(timestamp), hdr, const_cast<void *>(data), buffer);
+            if (!buffer) {
+                SPDLOG_WARN("Could not get source buffer for ts {0}", global_timestamp);
+                return;
             }
+
+            for (int i = 0; i < numports; ++i) {
+                auto port = ports[i];
+                std::string port_name = port.getName().cStr();
+                auto port_data = port.getData();
+                auto meta_data = port_data.getMetadata();
+                auto hdr = meta_data.getHeader();
+                auto data = static_cast<const void *>(port_data.getData().begin());
+
+                if (hdr.isImage()) {
+                    // call handler
+                    handle_image(port_name, AsTimestamp(timestamp), hdr, const_cast<void *>(data), buffer);
+                }
+            }
+        } catch(std::exception& error){
+            SPDLOG_ERROR(error.what());
         }
 
-        buffer->commit(true);
+        if (buffer) {
+            buffer->commit(true);
+        }
+
+
+
     };
 
     void handle_image(const std::string& port_name, Timestamp timestamp, const artekmed::schema::StreamHeader::Reader& hdr, void* data, buffer::SourceComponentBuffer* source_buffer ){
@@ -249,7 +258,6 @@ class ShmCompositeBufferSource : public Component {
 
         auto is_color = color_channel_names.find(port_name);
         if(is_color != color_channel_names.end()){
-
             auto& output_image = source_buffer->getOutput<OutPortImage>(color_image_group.port_group_index, is_color->second);
             image.copyTo(output_image.getImage());
             auto& output_header = source_buffer->getOutputHeader<OutPortImage>(color_image_group.port_group_index, is_color->second);
