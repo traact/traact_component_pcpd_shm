@@ -65,6 +65,7 @@ class ShmCompositeBufferSource : public Component {
 
     }
 
+
     bool configure(const pattern::instance::PatternInstance &pattern_instance,
                    buffer::ComponentBufferConfig *data) override {
 
@@ -75,19 +76,13 @@ class ShmCompositeBufferSource : public Component {
         running_.store(true, std::memory_order_release);
         stopped_future_ = stopped_promise_.get_future();
 
-        auto configure = [this](auto md) {
-            return configure_stream_receiver(md);
-        };
-        auto handle = [this](auto timestamp, auto reader){
-            handle_raw_frame(timestamp, reader);
-        };
-        SPDLOG_DEBUG("ShmCompositeBufferSource init shm runtime");
-        iox_app_name_ = iox::RuntimeName_t(iox::cxx::TruncateToCapacity, shm_app_name_);
-        iox::runtime::PoshRuntime::initRuntime(iox_app_name_);
-        reader_ = std::make_unique<SynchronizedBufferReader>(should_stop_, "traact_shm", stream_name_,configure, handle);
+
+
 
         thread_ = std::make_unique<std::thread>([this](){
             try{
+                initShm();
+
                 if (!reader_->connect()) {
                     SPDLOG_ERROR("error connecting to shm segment: {0}", stream_name_);
                     return;
@@ -167,6 +162,19 @@ class ShmCompositeBufferSource : public Component {
         return true;
     };
 
+    void initShm() {
+        auto configure = [this](auto md) {
+            return configure_stream_receiver(md);
+        };
+        auto handle = [this](auto timestamp, auto reader){
+            handle_raw_frame(timestamp, reader);
+        };
+        SPDLOG_DEBUG("ShmCompositeBufferSource init shm runtime");
+        iox_app_name_ = iox::RuntimeName_t(iox::cxx::TruncateToCapacity, shm_app_name_);
+        iox::runtime::PoshRuntime::initRuntime(iox_app_name_);
+        reader_ = std::make_unique<SynchronizedBufferReader>(should_stop_, "traact_shm", stream_name_, configure, handle);
+    }
+
     void handle_raw_frame(const uint64_t timestamp,
                           const artekmed::network::ShmBufferDescriptor::Reader reader){
         auto numports = reader.getNumPorts();
@@ -176,6 +184,8 @@ class ShmCompositeBufferSource : public Component {
         auto buffer_future = request_callback_(traact_timestamp);
         buffer_future.wait();
         auto buffer = buffer_future.get();
+        int last_successful_port{-1};
+        int current_port{-1};
         try{
 
             if (!buffer) {
@@ -183,20 +193,31 @@ class ShmCompositeBufferSource : public Component {
                 return;
             }
 
-            for (int i = 0; i < numports; ++i) {
-                auto port = ports[i];
-                std::string port_name = port.getName().cStr();
-                auto port_data = port.getData();
-                auto meta_data = port_data.getMetadata();
-                auto hdr = meta_data.getHeader();
-                auto data = static_cast<const void *>(port_data.getData().begin());
 
+            for (int i = 0; i < numports; ++i) {
+                current_port = i;
+                auto port = ports[i];
+                SPDLOG_ERROR("current portindex {0}", i);
+                std::string port_name = port.getName().cStr();
+
+                SPDLOG_ERROR("current port {0} {1}", current_port, port_name);
+                auto port_data = port.getData();
+                SPDLOG_ERROR("current port data {0} {1}", current_port, port_name);
+                auto meta_data = port_data.getMetadata();
+                SPDLOG_ERROR("current port meta {0} {1}", current_port, port_name);
+                auto hdr = meta_data.getHeader();
+                SPDLOG_ERROR("current port header {0} {1}", current_port, port_name);
+                auto data = static_cast<const void *>(port_data.getData().begin());
+                SPDLOG_ERROR("current port get data {0} {1}", current_port, port_name);
                 if (hdr.isImage()) {
                     // call handler
                     handle_image(port_name, AsTimestamp(timestamp), hdr, const_cast<void *>(data), buffer);
                 }
+                SPDLOG_ERROR("current port image handled {0} {1}", current_port, port_name);
+                last_successful_port = i;
             }
         } catch(std::exception& error){
+            SPDLOG_ERROR("current port: {2} last successful shm port index: {0} of {1}", last_successful_port, numports, current_port);
             SPDLOG_ERROR(error.what());
         }
 
