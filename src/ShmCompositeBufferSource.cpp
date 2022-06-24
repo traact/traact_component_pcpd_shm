@@ -197,23 +197,16 @@ class ShmCompositeBufferSource : public Component {
             for (int i = 0; i < numports; ++i) {
                 current_port = i;
                 auto port = ports[i];
-                SPDLOG_ERROR("current portindex {0}", i);
                 std::string port_name = port.getName().cStr();
 
-                SPDLOG_ERROR("current port {0} {1}", current_port, port_name);
                 auto port_data = port.getData();
-                SPDLOG_ERROR("current port data {0} {1}", current_port, port_name);
                 auto meta_data = port_data.getMetadata();
-                SPDLOG_ERROR("current port meta {0} {1}", current_port, port_name);
                 auto hdr = meta_data.getHeader();
-                SPDLOG_ERROR("current port header {0} {1}", current_port, port_name);
                 auto data = static_cast<const void *>(port_data.getData().begin());
-                SPDLOG_ERROR("current port get data {0} {1}", current_port, port_name);
                 if (hdr.isImage()) {
                     // call handler
                     handle_image(port_name, AsTimestamp(timestamp), hdr, const_cast<void *>(data), buffer);
                 }
-                SPDLOG_ERROR("current port image handled {0} {1}", current_port, port_name);
                 last_successful_port = i;
             }
         } catch(std::exception& error){

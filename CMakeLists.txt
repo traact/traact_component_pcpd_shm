@@ -14,6 +14,8 @@ include(traact_default_library_setup)
 
 find_package(CapnProto CONFIG REQUIRED)
 
+find_package(artekmed_schema CONFIG REQUIRED)
+
 # add your source files here
 set(COMPONENT_SRC src/ShmCompositeBufferSource.cpp src/SynchronizedBufferReader.cpp src/SynchronizedBufferReader.h src/utils.h src/ShmSensorCalibrationSource.cpp)
 
@@ -27,7 +29,7 @@ target_link_libraries(${CONAN_PACKAGE_NAME} PRIVATE
         CONAN_PKG::traact_spatial
         CONAN_PKG::traact_vision
         CapnProto::capnp-rpc
-
+        CONAN_PKG::iceoryx
         )
 
 include(traact_default_library_final)
