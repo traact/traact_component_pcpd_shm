@@ -3,6 +3,10 @@
 #ifndef TRAACT_COMPONENT_SHM_SRC_SYNCHRONIZEDBUFFERREADER_H_
 #define TRAACT_COMPONENT_SHM_SRC_SYNCHRONIZEDBUFFERREADER_H_
 
+#include <map>
+#include <pcpd_shm_client/datatypes/stream_headers.h>
+#include <pcpd_shm_client/datatypes/stream_headers.h>
+#include <pcpd_shm_client/datatypes/stream_metadata.h>
 #include <pcpd_shm_client/shm_reader/synchronized_stream_reader.h>
 
 namespace traact {

@@ -144,6 +144,11 @@ class ShmCompositeBufferSource : public Component {
 
     bool configure_stream_receiver(const std::map<std::string, pcpd::shm::StreamMetaData> &md){
         SPDLOG_DEBUG("ShmCompositeBufferSource config start");
+
+        for (const auto& [name, stream_data]: md) {
+            SPDLOG_INFO("got stream {0}", name);
+        }
+
         for (const auto& name_index : color_channel_names) {
             auto is_present = md.find(name_index.first);
             if(is_present == md.end()){
@@ -175,8 +180,21 @@ class ShmCompositeBufferSource : public Component {
         reader_ = std::make_unique<SynchronizedBufferReader>(should_stop_, "traact_shm", stream_name_, configure, handle);
     }
 
+    bool receivePort(const std::string &port_name) {
+        auto is_color = color_channel_names.find(port_name);
+        if(is_color != color_channel_names.end()){
+            return true;
+        }
+        auto is_ir = ir_channel_names.find(port_name);
+        if(is_ir != ir_channel_names.end()){
+            return true;
+        }
+        return false;
+    }
+
     void handle_raw_frame(const uint64_t timestamp,
                           const artekmed::network::ShmBufferDescriptor::Reader reader){
+
         auto numports = reader.getNumPorts();
         auto ports = reader.getPorts();
         auto global_timestamp = reader.getTimestamp();
@@ -199,14 +217,18 @@ class ShmCompositeBufferSource : public Component {
                 auto port = ports[i];
                 std::string port_name = port.getName().cStr();
 
-                auto port_data = port.getData();
-                auto meta_data = port_data.getMetadata();
-                auto hdr = meta_data.getHeader();
-                auto data = static_cast<const void *>(port_data.getData().begin());
-                if (hdr.isImage()) {
-                    // call handler
-                    handle_image(port_name, AsTimestamp(timestamp), hdr, const_cast<void *>(data), buffer);
+                if(receivePort(port_name)) {
+                    auto port_data = port.getData();
+                    auto meta_data = port_data.getMetadata();
+                    auto hdr = meta_data.getHeader();
+                    auto data = static_cast<const void *>(port_data.getData().begin());
+                    if (hdr.isImage()) {
+                        // call handler
+                        handle_image(port_name, AsTimestamp(timestamp), hdr, const_cast<void *>(data), buffer);
+                    }
                 }
+
+
                 last_successful_port = i;
             }
         } catch(std::exception& error){
