@@ -58,12 +58,20 @@ class ShmSensorCalibrationSource : public Component {
             return true;
         }
         auto artekmed_calibration = calib_reader.getDeviceCalibration();
-        world_to_ir_camera_transform_ = Artekmed2Traact(artekmed_calibration.camera_pose);
+        auto world_to_ir_opengl = Artekmed2Traact(artekmed_calibration.camera_pose);
         color_camera_calibration_ = Artekmed2Traact(artekmed_calibration.color_parameters);
         ir_camera_calibration_ = Artekmed2Traact(artekmed_calibration.depth_parameters);
         color_to_ir_transform_ = Artekmed2Traact(artekmed_calibration.color2depth_transform);
         ir_to_gyro_transform_  = Artekmed2Traact(artekmed_calibration.depth2gyro_transform);
         ir_to_acc_transform_  = Artekmed2Traact(artekmed_calibration.depth2acc_transform);
+
+        spatial::Pose6D pose_tmp = spatial::Pose6D::Identity();
+        pose_tmp.rotate( spatial::Rotation3D (0,1,0,0));
+
+        spatial::Pose6D pose_tmp_2 = spatial::Pose6D::Identity();
+        pose_tmp_2.rotate(spatial::Rotation3D(0.7071, -0.7071, 0, 0) * spatial::Rotation3D(0.7071, 0, 0, 0.7071));
+
+        world_to_ir_camera_transform_ = pose_tmp_2 * world_to_ir_opengl * pose_tmp;
 
         calib_reader.disconnect();
 

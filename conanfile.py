@@ -22,13 +22,15 @@ class TraactPackage(ConanFile):
         # add your dependencies
         self.traact_requires("traact_spatial", "latest")
         self.traact_requires("traact_vision", "latest")
-        self.requires("pcpd_shm_client/0.0.1@artekmed/stable")
-        self.requires("capnproto/0.8.0@camposs/stable")
+        #self.requires("pcpd_shm_client/0.0.1@artekmed/stable")
+        #self.requires("capnproto/0.8.0@camposs/stable")
+        self.requires("pcpd_shm_client/0.0.2@artekmed/stable")
+        self.requires("capnproto/0.9.1@camposs/stable")
         if self.options.with_tests:
             self.requires("gtest/[>=1.11.0]")
 
     def configure(self):
         self.options['pcpd_shm_client'].with_python = False
-        #self.options['pcpd_shm_client'].with_visualization = False
-        #self.options['pcpd_shm_client'].with_apps = False
+        self.options['pcpd_shm_client'].with_visualization = False
+        self.options['pcpd_shm_client'].with_apps = False
         self.options['capnproto'].shared = True

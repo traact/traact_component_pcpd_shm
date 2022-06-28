@@ -207,7 +207,7 @@ class ShmCompositeBufferSource : public Component {
         try{
 
             if (!buffer) {
-                SPDLOG_WARN("Could not get source buffer for ts {0}", global_timestamp);
+                SPDLOG_DEBUG("Could not get source buffer for ts {0}", global_timestamp);
                 return;
             }
 
