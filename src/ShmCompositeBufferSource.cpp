@@ -295,7 +295,7 @@ class ShmCompositeBufferSource : public Component {
         auto is_color = color_channel_names.find(port_name);
         if(is_color != color_channel_names.end()){
             auto& output_image = source_buffer->getOutput<OutPortImage>(color_image_group.port_group_index, is_color->second);
-            image.copyTo(output_image.getImage());
+            image.copyTo(output_image.value());
             auto& output_header = source_buffer->getOutputHeader<OutPortImage>(color_image_group.port_group_index, is_color->second);
             output_header.setFrom(image);
         }
@@ -303,7 +303,7 @@ class ShmCompositeBufferSource : public Component {
         auto is_ir = ir_channel_names.find(port_name);
         if(is_ir != ir_channel_names.end()){
             auto& output_image = source_buffer->getOutput<OutPortImage>(ir_image_group_.port_group_index, is_ir->second);
-            image.copyTo(output_image.getImage());
+            image.copyTo(output_image.value());
             auto& output_header = source_buffer->getOutputHeader<OutPortImage>(ir_image_group_.port_group_index, is_ir->second);
             output_header.setFrom(image);
         }
