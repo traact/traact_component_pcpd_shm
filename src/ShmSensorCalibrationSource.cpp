@@ -9,7 +9,8 @@
 #include <pcpd_shm_client/datatypes/stream_metadata.h>
 #include <pcpd_shm_client/shm_reader/sensor_calibration_reader.h>
 #include "utils.h"
-
+#include "traact/util/KinectLookupTable.h"
+#include <traact/spatial_convert.h>
 namespace traact::component {
 
 class ShmSensorCalibrationSource : public Component {
@@ -20,6 +21,7 @@ class ShmSensorCalibrationSource : public Component {
     using OutPortColorToIrCamera = buffer::PortConfig<spatial::Pose6DHeader , 3>;
     using OutPortIrCameraToAcc = buffer::PortConfig<spatial::Pose6DHeader , 4>;
     using OutPortIrCameraToGyro = buffer::PortConfig<spatial::Pose6DHeader , 5>;
+    using OutPortXYTable = buffer::PortConfig<vision::ImageHeader , 6>;
 
     static pattern::Pattern::Ptr GetPattern() {
         pattern::Pattern::Ptr
@@ -34,7 +36,8 @@ class ShmSensorCalibrationSource : public Component {
             .addProducerPort<OutPortIrCalibration>("output_ir_calibration")
             .addProducerPort<OutPortColorToIrCamera>("output_color_to_ir")
             .addProducerPort<OutPortIrCameraToAcc>("output_ir_to_acc")
-            .addProducerPort<OutPortIrCameraToGyro>("output_ir_to_gyro");
+            .addProducerPort<OutPortIrCameraToGyro>("output_ir_to_gyro")
+            .addProducerPort<OutPortXYTable>("output_xy_table");
 
         return
             pattern;
@@ -61,19 +64,20 @@ class ShmSensorCalibrationSource : public Component {
         auto world_to_ir_opengl = Artekmed2Traact(artekmed_calibration.camera_pose);
         color_camera_calibration_ = Artekmed2Traact(artekmed_calibration.color_parameters);
         ir_camera_calibration_ = Artekmed2Traact(artekmed_calibration.depth_parameters);
-        color_to_ir_transform_ = Artekmed2Traact(artekmed_calibration.color2depth_transform);
+
+        color_to_ir_transform_ = Artekmed2Traact(artekmed_calibration.color2depth_transform).inverse();
         ir_to_gyro_transform_  = Artekmed2Traact(artekmed_calibration.depth2gyro_transform);
         ir_to_acc_transform_  = Artekmed2Traact(artekmed_calibration.depth2acc_transform);
 
-        spatial::Pose6D pose_tmp = spatial::Pose6D::Identity();
-        pose_tmp.rotate( spatial::Rotation3D (0,1,0,0));
-
-        spatial::Pose6D pose_tmp_2 = spatial::Pose6D::Identity();
-        pose_tmp_2.rotate(spatial::Rotation3D(0.7071, -0.7071, 0, 0) * spatial::Rotation3D(0.7071, 0, 0, 0.7071));
-
-        world_to_ir_camera_transform_ = pose_tmp_2 * world_to_ir_opengl * pose_tmp;
-
         calib_reader.disconnect();
+
+        color_to_ir_transform_ = spatial::Convert<spatial::Pose6DHeader>::toTraact(color_to_ir_transform_, spatial::CoordinateSystems::OpenGL);
+        ir_to_gyro_transform_ = spatial::Convert<spatial::Pose6DHeader>::toTraact(ir_to_gyro_transform_, spatial::CoordinateSystems::OpenGL);
+        ir_to_acc_transform_ = spatial::Convert<spatial::Pose6DHeader>::toTraact(ir_to_acc_transform_, spatial::CoordinateSystems::OpenGL);
+        world_to_ir_camera_transform_ = spatial::Convert<spatial::Pose6DHeader>::toTraact(world_to_ir_camera_transform_, spatial::CoordinateSystems::OpenGL);
+
+        xy_table_ = cv::Mat(ir_camera_calibration_.height, ir_camera_calibration_.width, CV_32FC2);
+        vision::createXyLookupTable(ir_camera_calibration_, xy_table_);
 
         return true;
     }
@@ -91,6 +95,7 @@ class ShmSensorCalibrationSource : public Component {
         data.getOutput<OutPortColorToIrCamera>() = color_to_ir_transform_;
         data.getOutput<OutPortIrCameraToAcc>() = ir_to_acc_transform_;
         data.getOutput<OutPortIrCameraToGyro>() = ir_to_gyro_transform_;
+        data.getOutput<OutPortXYTable>().update(xy_table_);
         return true;
     }
 
@@ -108,6 +113,8 @@ class ShmSensorCalibrationSource : public Component {
     spatial::Pose6D color_to_ir_transform_;
     spatial::Pose6D ir_to_gyro_transform_;
     spatial::Pose6D ir_to_acc_transform_;
+
+    cv::Mat xy_table_;
 
 
 

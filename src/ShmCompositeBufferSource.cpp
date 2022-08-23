@@ -35,6 +35,10 @@ class ShmCompositeBufferSource : public Component {
             .beginPortGroup("ir_image")
             .addProducerPort<OutPortImage>("output")
             .addStringParameter("channel", "camera01_infraredimage")
+            .endPortGroup()
+            .beginPortGroup("depth_image")
+            .addProducerPort<OutPortImage>("output")
+            .addStringParameter("channel", "camera01_depthimage")
             .endPortGroup();
 
         return
@@ -48,18 +52,25 @@ class ShmCompositeBufferSource : public Component {
 
         pattern_instance.setValueFromParameter("stream", stream_name_);
 
-        color_image_group = pattern_instance.getPortGroupInfo("color_image");
-        for (int i = 0; i < color_image_group.size; ++i) {
+        color_image_group_ = pattern_instance.getPortGroupInfo("color_image");
+        for (int i = 0; i < color_image_group_.size; ++i) {
             std::string channel;
-            pattern_instance.setValueFromParameter(color_image_group.port_group_index, i, "channel", channel);
-            color_channel_names.emplace(channel, i);
+            pattern_instance.setValueFromParameter(color_image_group_.port_group_index, i, "channel", channel);
+            color_channel_names_.emplace(channel, i);
         }
 
         ir_image_group_ = pattern_instance.getPortGroupInfo("ir_image");
         for (int i = 0; i < ir_image_group_.size; ++i) {
             std::string channel;
             pattern_instance.setValueFromParameter(ir_image_group_.port_group_index, i, "channel", channel);
-            ir_channel_names.emplace(channel, i);
+            ir_channel_names_.emplace(channel, i);
+        }
+
+        depth_image_group_ = pattern_instance.getPortGroupInfo("depth_image");
+        for (int i = 0; i < depth_image_group_.size; ++i) {
+            std::string channel;
+            pattern_instance.setValueFromParameter(depth_image_group_.port_group_index, i, "channel", channel);
+            depth_channel_names_.emplace(channel, i);
         }
 
 
@@ -137,10 +148,12 @@ class ShmCompositeBufferSource : public Component {
     std::string stream_name_;
     std::unique_ptr<SynchronizedBufferReader> reader_;
 
-    PortGroupInfo color_image_group;
-    std::map<std::string, size_t> color_channel_names;
+    PortGroupInfo color_image_group_;
+    std::map<std::string, size_t> color_channel_names_;
     PortGroupInfo ir_image_group_;
-    std::map<std::string, size_t> ir_channel_names;
+    std::map<std::string, size_t> ir_channel_names_;
+    PortGroupInfo depth_image_group_;
+    std::map<std::string, size_t> depth_channel_names_;
 
     bool configure_stream_receiver(const std::map<std::string, pcpd::shm::StreamMetaData> &md){
         SPDLOG_DEBUG("ShmCompositeBufferSource config start");
@@ -149,14 +162,21 @@ class ShmCompositeBufferSource : public Component {
             SPDLOG_INFO("got stream {0}", name);
         }
 
-        for (const auto& name_index : color_channel_names) {
+        for (const auto& name_index : color_channel_names_) {
             auto is_present = md.find(name_index.first);
             if(is_present == md.end()){
                 SPDLOG_ERROR("channel {0} is missing", name_index.first);
                 return false;
             }
         }
-        for (const auto& name_index : ir_channel_names) {
+        for (const auto& name_index : ir_channel_names_) {
+            auto is_present = md.find(name_index.first);
+            if(is_present == md.end()){
+                SPDLOG_ERROR("channel {0} is missing", name_index.first);
+                return false;
+            }
+        }
+        for (const auto& name_index : depth_channel_names_) {
             auto is_present = md.find(name_index.first);
             if(is_present == md.end()){
                 SPDLOG_ERROR("channel {0} is missing", name_index.first);
@@ -181,12 +201,16 @@ class ShmCompositeBufferSource : public Component {
     }
 
     bool receivePort(const std::string &port_name) {
-        auto is_color = color_channel_names.find(port_name);
-        if(is_color != color_channel_names.end()){
+        auto is_color = color_channel_names_.find(port_name);
+        if(is_color != color_channel_names_.end()){
             return true;
         }
-        auto is_ir = ir_channel_names.find(port_name);
-        if(is_ir != ir_channel_names.end()){
+        auto is_ir = ir_channel_names_.find(port_name);
+        if(is_ir != ir_channel_names_.end()){
+            return true;
+        }
+        auto is_depth = depth_channel_names_.find(port_name);
+        if(is_depth != depth_channel_names_.end()){
             return true;
         }
         return false;
@@ -247,9 +271,11 @@ class ShmCompositeBufferSource : public Component {
     void handle_image(const std::string& port_name, Timestamp timestamp, const artekmed::schema::StreamHeader::Reader& hdr, void* data, buffer::SourceComponentBuffer* source_buffer ){
 
         auto pixel_format = hdr.getImage();
+        vision::PixelFormat traact_pixel_format = vision::PixelFormat::UNKNOWN_PIXELFORMAT;
         // wrap buffer in cv::Mat
         int dtype;
         if (pixel_format == artekmed::schema::PixelFormat::DEPTH) {
+            traact_pixel_format = vision::PixelFormat::DEPTH;
             switch (hdr.getBitsPerElement()) {
                 case 16:
                     dtype = CV_16UC1;
@@ -261,14 +287,19 @@ class ShmCompositeBufferSource : public Component {
                     return;
             }
         } else if (pixel_format == artekmed::schema::PixelFormat::RGBA) {
+            traact_pixel_format = vision::PixelFormat::RGBA;
             dtype = CV_8UC4;
         } else if (pixel_format == artekmed::schema::PixelFormat::BGRA) {
+            traact_pixel_format = vision::PixelFormat::BGRA;
             dtype = CV_8UC4;
         } else if (pixel_format == artekmed::schema::PixelFormat::RGB) {
+            traact_pixel_format = vision::PixelFormat::RGB;
             dtype = CV_8UC3;
         } else if (pixel_format == artekmed::schema::PixelFormat::BGR) {
+            traact_pixel_format = vision::PixelFormat::BGR;
             dtype = CV_8UC3;
         } else if (pixel_format == artekmed::schema::PixelFormat::LUMINANCE) {
+            traact_pixel_format = vision::PixelFormat::LUMINANCE;
             switch (hdr.getBitsPerElement()) {
                 case 16:
                     dtype = CV_16UC1;
@@ -292,20 +323,31 @@ class ShmCompositeBufferSource : public Component {
                        cv::Mat::AUTO_STEP);
 
 
-        auto is_color = color_channel_names.find(port_name);
-        if(is_color != color_channel_names.end()){
-            auto& output_image = source_buffer->getOutput<OutPortImage>(color_image_group.port_group_index, is_color->second);
+        auto is_color = color_channel_names_.find(port_name);
+        if(is_color != color_channel_names_.end()){
+            auto& output_image = source_buffer->getOutput<OutPortImage>(color_image_group_.port_group_index, is_color->second);
             image.copyTo(output_image.value());
-            auto& output_header = source_buffer->getOutputHeader<OutPortImage>(color_image_group.port_group_index, is_color->second);
+            auto& output_header = source_buffer->getOutputHeader<OutPortImage>(color_image_group_.port_group_index, is_color->second);
             output_header.setFrom(image);
+            output_header.pixel_format = traact_pixel_format;
         }
 
-        auto is_ir = ir_channel_names.find(port_name);
-        if(is_ir != ir_channel_names.end()){
+        auto is_ir = ir_channel_names_.find(port_name);
+        if(is_ir != ir_channel_names_.end()){
             auto& output_image = source_buffer->getOutput<OutPortImage>(ir_image_group_.port_group_index, is_ir->second);
             image.copyTo(output_image.value());
             auto& output_header = source_buffer->getOutputHeader<OutPortImage>(ir_image_group_.port_group_index, is_ir->second);
             output_header.setFrom(image);
+            output_header.pixel_format = traact_pixel_format;
+        }
+
+        auto is_depth = depth_channel_names_.find(port_name);
+        if(is_depth != depth_channel_names_.end()){
+            auto& output_image = source_buffer->getOutput<OutPortImage>(depth_image_group_.port_group_index, is_depth->second);
+            image.copyTo(output_image.value());
+            auto& output_header = source_buffer->getOutputHeader<OutPortImage>(depth_image_group_.port_group_index, is_depth->second);
+            output_header.setFrom(image);
+            output_header.pixel_format = traact_pixel_format;
         }
 
     }
