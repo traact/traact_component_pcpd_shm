@@ -26,8 +26,9 @@ class TraactPackage(ConanFile):
         #self.requires("capnproto/0.8.0@camposs/stable")
         self.requires("pcpd_shm_client/0.0.2@artekmed/stable")
         self.requires("capnproto/0.9.1@camposs/stable")
+        self.requires("zlib/1.2.13")
         if self.options.with_tests:
-            self.requires("gtest/[>=1.11.0]")
+            self.requires("gtest/cci.20210126")
 
     def configure(self):
         self.options['pcpd_shm_client'].with_python = False
