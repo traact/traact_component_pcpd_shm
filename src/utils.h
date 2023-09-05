@@ -4,7 +4,9 @@
 #define TRAACT_COMPONENT_SHM_SRC_UTILS_H_
 
 #include <traact/vision.h>
-#include <artekmed/capnp/schema/core.capnp.h>
+#include <artekmed/core.capnp.h>
+#include <pcpd_datatypes/rigid_transform.h>
+#include <pcpd_datatypes/intrinsic_parameters.h>
 
 namespace traact {
 

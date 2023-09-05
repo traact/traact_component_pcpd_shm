@@ -4,9 +4,7 @@
 #include <iceoryx_posh/runtime/posh_runtime.hpp>
 #include <traact/traact.h>
 #include <traact/vision.h>
-#include <pcpd_shm_client/datatypes/stream_headers.h>
-#include <pcpd_shm_client/datatypes/stream_headers.h>
-#include <pcpd_shm_client/datatypes/stream_metadata.h>
+#include <pcpd_shm_client/datatypes/shm_datatypes.h>
 #include <pcpd_shm_client/shm_reader/sensor_calibration_reader.h>
 #include "utils.h"
 #include "traact/util/KinectLookupTable.h"

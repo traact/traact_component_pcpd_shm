@@ -1,35 +1,37 @@
 cmake_minimum_required(VERSION 3.16)
 
-if (EXISTS ${CMAKE_CURRENT_BINARY_DIR}/conanbuildinfo.cmake)
-    include(${CMAKE_CURRENT_BINARY_DIR}/conanbuildinfo.cmake)
-else ()
-    message(FATAL_ERROR "The file conanbuildinfo.cmake doesn't exist, you have to run conan install first")
-endif ()
+set(TARGET_NAME traact_component_pcpd_shm)
 
-list(APPEND CMAKE_MODULE_PATH ${CONAN_TRAACT_RUN_ENV_ROOT}/cmake)
+project(${TARGET_NAME} VERSION "0.0.0" LANGUAGES CXX)
 
-project(${CONAN_PACKAGE_NAME}_PROJECT VERSION ${CONAN_PACKAGE_VERSION})
+find_package(traact_base)
+list(APPEND CMAKE_MODULE_PATH ${traact_base_INCLUDE_DIR})
 
 include(traact_default_library_setup)
-
-find_package(CapnProto CONFIG REQUIRED)
-
-find_package(artekmed_schema CONFIG REQUIRED)
 
 # add your source files here
 set(COMPONENT_SRC src/ShmCompositeBufferSource.cpp src/SynchronizedBufferReader.cpp src/SynchronizedBufferReader.h src/utils.h src/ShmSensorCalibrationSource.cpp)
 
-add_library(${CONAN_PACKAGE_NAME} SHARED ${COMPONENT_SRC})
 
-#conan_target_link_libraries(${CONAN_PACKAGE_NAME})
-target_link_libraries(${CONAN_PACKAGE_NAME} PRIVATE
-        CONAN_PKG::opencv
-        CONAN_PKG::pcpd_shm_client
-        CONAN_PKG::traact_core
-        CONAN_PKG::traact_spatial
-        CONAN_PKG::traact_vision
+add_library(${TARGET_NAME} SHARED ${COMPONENT_SRC})
+
+find_package(CapnProto CONFIG REQUIRED)
+find_package(artekmed_schema_capnproto CONFIG REQUIRED)
+find_package(traact_spatial CONFIG REQUIRED)
+find_package(traact_vision CONFIG REQUIRED)
+find_package(iceoryx CONFIG REQUIRED)
+find_package(pcpd_shm_client CONFIG REQUIRED)
+find_package(CapnProto CONFIG REQUIRED)
+
+target_link_libraries(${TARGET_NAME} PRIVATE
+        opencv::opencv
+        pcpd_shm_client::pcpd_shm_client
+        traact_core::traact_core
+        traact_spatial::traact_spatial
+        traact_vision::traact_vision
         CapnProto::capnp-rpc
-        CONAN_PKG::iceoryx
+        iceoryx::iceoryx
+        artekmed_schema_capnproto::artekmed_schema_capnproto
         )
 
 include(traact_default_library_final)
