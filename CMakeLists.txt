@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.16)
 
-set(TARGET_NAME traact_component_pcpd_shm)
+set(TARGET_NAME traact_pcpd)
 
 project(${TARGET_NAME} VERSION "0.0.0" LANGUAGES CXX)
 
@@ -10,7 +10,8 @@ list(APPEND CMAKE_MODULE_PATH ${traact_base_INCLUDE_DIR})
 include(traact_default_library_setup)
 
 # add your source files here
-set(COMPONENT_SRC src/ShmCompositeBufferSource.cpp src/SynchronizedBufferReader.cpp src/SynchronizedBufferReader.h src/utils.h src/ShmSensorCalibrationSource.cpp)
+set(COMPONENT_SRC src/ShmCompositeBufferSource.cpp src/SynchronizedBufferReader.cpp src/SynchronizedBufferReader.h src/utils.h src/ShmSensorCalibrationSource.cpp
+        src/dds/DDSSink.cpp)
 
 
 add_library(${TARGET_NAME} SHARED ${COMPONENT_SRC})
@@ -33,5 +34,7 @@ target_link_libraries(${TARGET_NAME} PRIVATE
         iceoryx::iceoryx
         artekmed_schema_capnproto::artekmed_schema_capnproto
         )
+
+install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 include(traact_default_library_final)
