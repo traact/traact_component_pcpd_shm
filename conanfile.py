@@ -17,7 +17,7 @@ class TraactPackage(ConanFile):
     settings = "os", "compiler", "build_type", "arch"
     compiler = "cppstd"
 
-    exports_sources = "src/*", "include/*", "CMakeLists.txt"
+    exports_sources = "src/*", "CMakeLists.txt"
 
     def requirements(self):
         self.requires("traact_spatial/0.0.0@traact/latest")

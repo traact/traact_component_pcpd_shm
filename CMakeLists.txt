@@ -35,6 +35,6 @@ target_link_libraries(${TARGET_NAME} PRIVATE
         artekmed_schema_capnproto::artekmed_schema_capnproto
         )
 
-install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+#install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
 
 include(traact_default_library_final)
