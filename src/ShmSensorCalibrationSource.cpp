@@ -58,7 +58,8 @@ class ShmSensorCalibrationSource : public Component {
             SPDLOG_ERROR("Error connecting to shm-provider for camera calibration: {0}", stream_name_);
             return true;
         }
-        auto artekmed_calibration = calib_reader.getDeviceCalibration();
+        auto device_context = calib_reader.getDeviceContext();
+        auto& artekmed_calibration = device_context.calibration;
         auto world_to_ir_opengl = Artekmed2Traact(artekmed_calibration.camera_pose);
         color_camera_calibration_ = Artekmed2Traact(artekmed_calibration.color_parameters);
         ir_camera_calibration_ = Artekmed2Traact(artekmed_calibration.depth_parameters);
