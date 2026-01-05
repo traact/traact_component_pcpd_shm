@@ -1,10 +1,10 @@
 /** Copyright (C) 2022  Frieder Pankratz <frieder.pankratz@gmail.com> **/
 // based on multistream_ndi_sender example
 
-#include <iceoryx_posh/runtime/posh_runtime.hpp>
 #include <traact/traact.h>
 #include <traact/vision.h>
 #include <thread>
+#include <pcpd_shm/shm_runtime.h>
 #include "SynchronizedBufferReader.h"
 #include <pcpd_shm_client/shm_reader/synchronized_stream_reader.h>
 #include "utils.h"
@@ -144,7 +144,8 @@ class ShmCompositeBufferSource : public Component {
     std::future<void> stopped_future_;
 
     std::string shm_app_name_;
-    iox::RuntimeName_t iox_app_name_;
+    std::unique_ptr<pcpd::dataflow::ShmRuntime> m_shm_runtime_;
+
     std::string stream_name_;
     std::unique_ptr<SynchronizedBufferReader> reader_;
 
@@ -195,8 +196,8 @@ class ShmCompositeBufferSource : public Component {
             handle_raw_frame(timestamp, reader);
         };
         SPDLOG_DEBUG("ShmCompositeBufferSource init shm runtime");
-        iox_app_name_ = iox::RuntimeName_t(iox::cxx::TruncateToCapacity, shm_app_name_);
-        iox::runtime::PoshRuntime::initRuntime(iox_app_name_);
+        m_shm_runtime_ = std::make_unique<pcpd::dataflow::ShmRuntime>();
+        m_shm_runtime_->initRuntime(shm_app_name_);
         reader_ = std::make_unique<SynchronizedBufferReader>(should_stop_, "traact_shm", stream_name_, configure, handle);
     }
 

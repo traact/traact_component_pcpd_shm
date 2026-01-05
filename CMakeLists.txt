@@ -20,7 +20,7 @@ find_package(CapnProto CONFIG REQUIRED)
 find_package(artekmed_schema_capnproto CONFIG REQUIRED)
 find_package(traact_spatial CONFIG REQUIRED)
 find_package(traact_vision CONFIG REQUIRED)
-find_package(iceoryx CONFIG REQUIRED)
+find_package(iceoryx2 CONFIG REQUIRED)
 find_package(pcpd_shm_client CONFIG REQUIRED)
 find_package(CapnProto CONFIG REQUIRED)
 
@@ -31,7 +31,7 @@ target_link_libraries(${TARGET_NAME} PRIVATE
         traact_spatial::traact_spatial
         traact_vision::traact_vision
         CapnProto::capnp-rpc
-        iceoryx::iceoryx
+        iceoryx2::iceoryx2
         artekmed_schema_capnproto::artekmed_schema_capnproto
         )
 

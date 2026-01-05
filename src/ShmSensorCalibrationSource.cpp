@@ -1,9 +1,9 @@
 /** Copyright (C) 2022  Frieder Pankratz <frieder.pankratz@gmail.com> **/
 // based on multistream_ndi_sender example
 
-#include <iceoryx_posh/runtime/posh_runtime.hpp>
 #include <traact/traact.h>
 #include <traact/vision.h>
+#include <pcpd_shm/shm_runtime.h>
 #include <pcpd_shm_client/datatypes/shm_datatypes.h>
 #include <pcpd_shm_client/shm_reader/sensor_calibration_reader.h>
 #include "utils.h"
@@ -51,8 +51,8 @@ class ShmSensorCalibrationSource : public Component {
 
     bool start() override {
 
-        const iox::RuntimeName_t APP_NAME(iox::cxx::TruncateToCapacity, shm_app_name_);
-        iox::runtime::PoshRuntime::initRuntime(APP_NAME);
+        m_shm_runtime_ = std::make_unique<pcpd::dataflow::ShmRuntime>();
+        m_shm_runtime_->initRuntime(shm_app_name_);
         auto calib_reader = pcpd::shm::SensorCalibrationReader(should_stop_, "traact_shm", stream_name_);
         if (!calib_reader.connect()) {
             SPDLOG_ERROR("Error connecting to shm-provider for camera calibration: {0}", stream_name_);
@@ -101,6 +101,8 @@ class ShmSensorCalibrationSource : public Component {
  private:
     std::atomic_bool running_{false};
     bool should_stop_{false};
+
+    std::unique_ptr<pcpd::dataflow::ShmRuntime> m_shm_runtime_;
 
     std::string shm_app_name_;
     std::string stream_name_;
