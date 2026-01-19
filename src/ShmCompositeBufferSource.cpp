@@ -196,8 +196,8 @@ class ShmCompositeBufferSource : public Component {
             handle_raw_frame(timestamp, reader);
         };
         SPDLOG_DEBUG("ShmCompositeBufferSource init shm runtime");
-        m_shm_runtime_ = std::make_unique<pcpd::dataflow::ShmRuntime>();
-        m_shm_runtime_->initRuntime(shm_app_name_);
+        //m_shm_runtime_ = std::make_unique<pcpd::dataflow::ShmRuntime>();
+        //m_shm_runtime_->initRuntime(shm_app_name_);
         reader_ = std::make_unique<SynchronizedBufferReader>(should_stop_, "traact_shm", stream_name_, configure, handle);
     }
 

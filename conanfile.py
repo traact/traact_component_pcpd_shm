@@ -28,12 +28,10 @@ class TraactPackage(ConanFile):
         self.requires("opencv/4.8.0@camposs/stable", override=True)
         #self.requires("iceoryx/2.0.6@camposs/stable", transitive_libs=True, override=True)
         #self.requires("rapidjson/cci.20230929@camposs/stable", force=True)
-        
         self.requires("pcpd_shm_client/0.4.0@artekmed/stable", run=True)
         #self.requires("tcn_schema/0.0.1@artekmed/stable", run=True)
         #self.requires("fast-dds/2.11.1", run=True)
-        
-        
+
 
     def configure(self):
         self.options['pcpd_shm_client'].with_python = False

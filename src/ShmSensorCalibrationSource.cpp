@@ -51,8 +51,8 @@ class ShmSensorCalibrationSource : public Component {
 
     bool start() override {
 
-        m_shm_runtime_ = std::make_unique<pcpd::dataflow::ShmRuntime>();
-        m_shm_runtime_->initRuntime(shm_app_name_);
+        //m_shm_runtime_ = std::make_unique<pcpd::dataflow::ShmRuntime>();
+        //m_shm_runtime_->initRuntime(shm_app_name_);
         auto calib_reader = pcpd::shm::SensorCalibrationReader(should_stop_, "traact_shm", stream_name_);
         if (!calib_reader.connect()) {
             SPDLOG_ERROR("Error connecting to shm-provider for camera calibration: {0}", stream_name_);
